@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { BotDef } from '../core/types';
 import { Avatar, asset } from '../ui/shared/Avatar';
-import { WhatsAppChat } from '../ui/whatsapp/WhatsAppChat';
+import { Device } from '../ui/device/Device';
+import { ThemeToggle } from '../ui/device/DeviceRail';
+import { useAppearance } from '../ui/device/appearance';
 import { useClock, useEngine } from '../ui/simulator/useEngine';
 import './pages.css';
 
@@ -15,6 +17,7 @@ export function DemoPage({ bot }: { bot: BotDef }) {
   const clock = useClock(state.clockOffsetMin);
   const [prefill, setPrefill] = useState<{ value: string; nonce: number }>();
   const [info, setInfo] = useState(false);
+  const { appearance, update } = useAppearance();
   const ids = cfg.demo?.shareIdentities ? cfg.demo.identities ?? [] : [];
 
   const Tips = () => (
@@ -48,6 +51,7 @@ export function DemoPage({ bot }: { bot: BotDef }) {
     <div className="page-demo">
       <div className="mbar">
         <b>{cfg.client}</b>
+        <ThemeToggle appearance={appearance} update={update} />
         <button type="button" className="btn" onClick={() => setInfo(true)}>
           Cómo probar
         </button>
@@ -80,18 +84,22 @@ export function DemoPage({ bot }: { bot: BotDef }) {
       </section>
 
       <main className="stage">
-        <WhatsAppChat
-          profile={cfg.profile}
-          items={items}
-          receipts={receipts}
-          typing={state.typing}
-          online={state.mode !== 'idle'}
-          notice={cfg.demo?.notice}
-          gallery={cfg.demo?.gallery}
+        <Device
+          appearance={appearance}
+          update={update}
           clock={clock}
-          prefill={prefill}
-          onSend={(i) => engine.send(i)}
-          menu={[{ label: 'Reiniciar conversación', onSelect: () => engine.reset() }]}
+          chat={{
+            profile: cfg.profile,
+            items,
+            receipts,
+            typing: state.typing,
+            online: state.mode !== 'idle',
+            notice: cfg.demo?.notice,
+            gallery: cfg.demo?.gallery,
+            prefill,
+            onSend: (i) => engine.send(i),
+            menu: [{ label: 'Reiniciar conversación', onSelect: () => engine.reset() }],
+          }}
         />
       </main>
 

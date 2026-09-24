@@ -35,7 +35,11 @@ src/core/          motor, DSL, tipos, linter, validadores, helper de tests. Inde
 src/bots/<id>/     un bot por carpeta: bot.ts, texts.ts, mocks.ts
 src/bots/_plantilla/  base que copia `npm run new-bot`
 src/bots/index.ts  registro (el script lo edita solo)
-src/ui/whatsapp/   componentes de la interfaz de WhatsApp (Message, WhatsAppChat)
+src/ui/device/     marco de teléfono común a todos los canales (PhoneFrame), controles de vista
+                   a su derecha (DeviceRail: tema claro/oscuro; canal cuando haya más de uno)
+                   y `useAppearance` (tema + canal). Device junta todo y elige el chat del canal.
+src/ui/whatsapp/   componentes de la interfaz de WhatsApp (Message, WhatsAppChat). Colores solo con
+                   tokens --wa-*: claro en :root, oscuro en [data-theme='dark'].
 src/ui/simulator/  useEngine (puente motor ↔ React) y TestPanel
 src/ui/canvas/     árbol, layout, bloques y panel de detalle del flujograma
 src/pages/         Home, Demo, Test, Flow

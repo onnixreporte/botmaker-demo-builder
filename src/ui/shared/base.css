@@ -97,6 +97,10 @@ h3 {
 .btn:hover:not(:disabled) {
   border-color: #98a2b3;
 }
+.btn.icon {
+  padding: 7px;
+  color: var(--ink-2);
+}
 .btn:disabled {
   opacity: 0.45;
   cursor: default;

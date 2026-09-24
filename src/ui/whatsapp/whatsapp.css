@@ -1,123 +1,76 @@
 /* ==========================================================================
-   Interfaz tipo WhatsApp (Android, tema claro).
+   Interfaz tipo WhatsApp (Android), tema claro y oscuro.
    Todo lleva prefijo wa- para no chocar con el resto de la app.
+   Los colores son tokens: el tema claro está en :root (también lo usa la
+   vista previa del canvas) y el oscuro se aplica dentro de PhoneFrame con
+   [data-theme='dark'].
    ========================================================================== */
 :root {
-  /* color base de wallpaper.jpg (se ve mientras carga la imagen) */
-  --wa-bg: #f9f9f9;
-  --wa-bar: #ffffff;
+  --wa-bg: #efeae2; /* fondo del chat (crema por defecto de WhatsApp) */
+  --wa-bar: #ffffff; /* encabezado */
   --wa-ink: #111b21;
   --wa-sub: #667781;
   --wa-icon: #54656f;
   --wa-in: #ffffff;
   --wa-out: #d9fdd3;
   --wa-green: #1daa61;
-  --wa-teal: #008069;
+  --wa-teal: #008069; /* texto de botones y acentos */
   --wa-link: #027eb5;
   --wa-read: #53bdeb;
+  --wa-tick: #8696a0;
   --wa-note: #ffeecd;
+  --wa-note-ink: #54656f;
+  --wa-chip: #ffffff;
+  --wa-chip-ink: #54656f;
+  --wa-surface: #ffffff; /* compositor, hojas y menús */
+  --wa-soft: #f0f2f5; /* bloques dentro de un globo, fondos suaves */
+  --wa-hover: #f5f6f6;
+  --wa-press: rgba(11, 20, 26, 0.05);
+  --wa-line: #e9edef;
+  --wa-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
   --wa-font: 'Roboto', system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
+[data-theme='dark'] {
+  --wa-bg: #0b141a;
+  --wa-bar: #1f2c34;
+  --wa-ink: #e9edef;
+  --wa-sub: #8696a0;
+  --wa-icon: #aebac1;
+  --wa-in: #1f2c34;
+  --wa-out: #005c4b;
+  --wa-green: #21c063;
+  --wa-teal: #21c063;
+  --wa-link: #53bdeb;
+  --wa-tick: #8696a0;
+  --wa-note: #1f2c34;
+  --wa-note-ink: #ffd279;
+  --wa-chip: #1f2c34;
+  --wa-chip-ink: #8696a0;
+  --wa-surface: #1f2c34;
+  --wa-soft: #182229;
+  --wa-hover: #2a3942;
+  --wa-press: rgba(255, 255, 255, 0.06);
+  --wa-line: #2a3942;
+  --wa-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.3);
+}
+[data-channel='whatsapp'] {
+  --dev-bar: var(--wa-bar);
+  --dev-ink: var(--wa-ink);
+  --dev-bottom: var(--wa-bg);
+}
 
-/* ---------- teléfono ---------- */
-.wa-phone {
+/* ---------- aplicación (dentro de PhoneFrame) ---------- */
+.wa-app {
   position: relative;
-  width: 392px;
-  max-width: 100%;
-  height: min(860px, 100%);
-  border-radius: 54px;
-  background: #17191d;
-  padding: 11px;
-  box-sizing: border-box;
-  box-shadow: 0 40px 70px -30px rgba(16, 24, 40, 0.45), inset 0 0 0 2px #2c3037;
-  flex: none;
-}
-.wa-phone::after {
-  content: '';
-  position: absolute;
-  right: -3px;
-  top: 170px;
-  width: 3px;
-  height: 64px;
-  border-radius: 0 3px 3px 0;
-  background: #2c3037;
-}
-.wa-screen {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 44px;
-  overflow: hidden;
-  /* wallpaper.jpg (vertical) va en toda la pantalla: el chat y el compositor flotan encima. */
-  background-color: var(--wa-bg);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background: var(--wa-bg);
   font-family: var(--wa-font);
   color: var(--wa-ink);
   -webkit-font-smoothing: antialiased;
-}
-.wa-sbar {
-  flex: none;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px 0 28px;
-  background: var(--wa-bar);
-  font-size: 13.5px;
-  font-weight: 500;
-  position: relative;
-}
-.wa-sbar .cam {
-  position: absolute;
-  left: 50%;
-  top: 9px;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: #17191d;
-  transform: translateX(-50%);
-}
-.wa-sbar .si {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-}
-.wa-homebar {
-  flex: none;
-  height: 18px;
-  display: grid;
-  place-items: center;
-}
-.wa-homebar i {
-  width: 120px;
-  height: 4px;
-  border-radius: 2px;
-  background: #1b1d21;
-  opacity: 0.75;
-}
-
-/* En pantallas chicas el chat ocupa todo: sin marco de teléfono. */
-@media (max-width: 900px) {
-  .wa-phone {
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-    padding: 0;
-    box-shadow: none;
-    background: transparent;
-  }
-  .wa-phone::after,
-  .wa-sbar,
-  .wa-homebar {
-    display: none;
-  }
-  .wa-screen {
-    border-radius: 0;
-  }
 }
 
 /* ---------- encabezado ---------- */
@@ -128,7 +81,7 @@
   gap: 4px;
   padding: 4px 4px 8px 2px;
   background: var(--wa-bar);
-  box-shadow: 0 1px 0 rgba(11, 20, 26, 0.06);
+  box-shadow: 0 1px 0 var(--wa-line);
   position: relative;
   z-index: 3;
 }
@@ -146,7 +99,7 @@
   padding: 0;
 }
 .wa-ib:hover {
-  background: rgba(11, 20, 26, 0.05);
+  background: var(--wa-press);
 }
 .wa-ib:focus-visible,
 .wa-send:focus-visible,
@@ -204,17 +157,18 @@
 .wa-chip {
   display: table;
   margin: 8px auto 6px;
-  background: #fff;
-  color: #54656f;
+  background: var(--wa-chip);
+  color: var(--wa-chip-ink);
   font-size: 12.5px;
   padding: 5px 12px;
   border-radius: 8px;
-  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  box-shadow: var(--wa-shadow);
   text-align: center;
   max-width: 86%;
 }
 .wa-chip.note {
   background: var(--wa-note);
+  color: var(--wa-note-ink);
   line-height: 1.4;
   font-size: 12.3px;
   padding: 7px 12px;
@@ -243,7 +197,7 @@
   position: relative;
   background: var(--wa-in);
   border-radius: 8px;
-  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  box-shadow: var(--wa-shadow);
   min-width: 64px;
 }
 .wa-m.out .wa-b {
@@ -318,7 +272,7 @@
 }
 .wa-tk {
   display: inline-flex;
-  color: #8696a0;
+  color: var(--wa-tick);
 }
 .wa-tk.read {
   color: var(--wa-read);
@@ -335,7 +289,7 @@
   gap: 7px;
   width: 100%;
   border: 0;
-  border-top: 1px solid #e9edef;
+  border-top: 1px solid var(--wa-line);
   background: transparent;
   padding: 10px 8px 11px;
   color: var(--wa-teal);
@@ -351,7 +305,7 @@
   gap: 7px;
   width: 100%;
   border: 0;
-  border-top: 1px solid #e9edef;
+  border-top: 1px solid var(--wa-line);
   background: transparent;
   padding: 10px 8px 11px;
   color: var(--wa-teal);
@@ -363,7 +317,7 @@
 }
 .wa-ia-btn:hover,
 .wa-rb:hover {
-  background: #f5f6f6;
+  background: var(--wa-hover);
 }
 .wa-rb:disabled,
 .wa-ia-btn:disabled {
@@ -425,7 +379,7 @@
   margin: 3px;
   padding: 10px;
   border-radius: 6px;
-  background: rgba(11, 20, 26, 0.05);
+  background: var(--wa-soft);
   min-width: 220px;
 }
 .wa-doc .ico {
@@ -480,7 +434,7 @@
   display: flex;
 }
 .wa-voice .pl {
-  color: #54656f;
+  color: var(--wa-icon);
   display: flex;
   flex: none;
 }
@@ -534,7 +488,7 @@
   color: #fff;
 }
 .wa-ctc-act {
-  border-top: 1px solid rgba(11, 20, 26, 0.08);
+  border-top: 1px solid var(--wa-line);
   text-align: center;
   padding: 9px;
   color: var(--wa-teal);
@@ -547,7 +501,7 @@
 }
 .wa-stk-meta {
   align-self: flex-end;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--wa-chip);
   border-radius: 8px;
   padding: 1px 6px;
   font-size: 11px;
@@ -564,7 +518,7 @@
   height: 42px;
   border-radius: 50%;
   border: 0;
-  background: #fff;
+  background: var(--wa-surface);
   box-shadow: 0 2px 6px rgba(11, 20, 26, 0.2);
   display: grid;
   place-items: center;
@@ -605,11 +559,11 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  background: #fff;
+  background: var(--wa-surface);
   border-radius: 26px;
   min-height: 48px;
   padding: 0 4px;
-  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  box-shadow: var(--wa-shadow);
 }
 .wa-cbox input {
   flex: 1;
@@ -622,7 +576,7 @@
   color: var(--wa-ink);
 }
 .wa-cbox input::placeholder {
-  color: #8696a0;
+  color: var(--wa-sub);
 }
 .wa-send {
   width: 48px;
@@ -653,7 +607,8 @@
 .wa-sheet {
   width: 100%;
   max-height: 78%;
-  background: #fff;
+  background: var(--wa-surface);
+  color: var(--wa-ink);
   border-radius: 22px 22px 0 0;
   display: flex;
   flex-direction: column;
@@ -707,7 +662,7 @@
   color: var(--wa-ink);
 }
 .wa-sh-row:hover {
-  background: #f5f6f6;
+  background: var(--wa-hover);
 }
 .wa-sh-row .tx {
   flex: 1;
@@ -728,7 +683,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid #8696a0;
+  border: 2px solid var(--wa-sub);
   box-sizing: border-box;
   flex: none;
   display: grid;
@@ -754,7 +709,8 @@
 .wa-pop {
   position: absolute;
   z-index: 11;
-  background: #fff;
+  background: var(--wa-surface);
+  color: var(--wa-ink);
   border-radius: 18px;
   box-shadow: 0 8px 28px rgba(11, 20, 26, 0.22);
   animation: wa-up 0.15s ease-out;
@@ -776,7 +732,7 @@
   align-items: center;
   gap: 7px;
   font: 13px var(--wa-font);
-  color: #3b4a54;
+  color: var(--wa-ink);
   cursor: pointer;
 }
 .wa-att i {
@@ -807,13 +763,13 @@
   cursor: pointer;
 }
 .wa-emojis .g button:hover {
-  background: #f0f2f5;
+  background: var(--wa-hover);
 }
 .wa-btn-line {
   margin-top: 8px;
   width: 100%;
-  border: 1px solid #e9edef;
-  background: #fff;
+  border: 1px solid var(--wa-line);
+  background: transparent;
   border-radius: 10px;
   padding: 10px;
   font: 500 14.5px var(--wa-font);
@@ -839,7 +795,7 @@
   cursor: pointer;
 }
 .wa-menu button:hover {
-  background: #f5f6f6;
+  background: var(--wa-hover);
 }
 .wa-gal {
   padding: 0 16px 16px;
@@ -852,7 +808,7 @@
 .wa-gal .grid button {
   border: 0;
   padding: 0;
-  background: #f0f2f5;
+  background: var(--wa-soft);
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;

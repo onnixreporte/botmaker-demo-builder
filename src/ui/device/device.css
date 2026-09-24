@@ -1,0 +1,155 @@
+/* ==========================================================================
+   Marco de teléfono y controles de vista. Común a todos los canales.
+   Cada canal define en su CSS, según [data-channel] y [data-theme]:
+   --dev-bar / --dev-ink (barra de estado) y --dev-bottom (fondo bajo el chat).
+   ========================================================================== */
+.dev-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: min(860px, 100%);
+  max-width: 100%;
+}
+
+.dev {
+  position: relative;
+  width: 392px;
+  max-width: 100%;
+  height: 100%;
+  border-radius: 54px;
+  background: #17191d;
+  padding: 11px;
+  box-sizing: border-box;
+  box-shadow: 0 40px 70px -30px rgba(16, 24, 40, 0.45), inset 0 0 0 2px #2c3037;
+  flex: none;
+}
+.dev::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 170px;
+  width: 3px;
+  height: 64px;
+  border-radius: 0 3px 3px 0;
+  background: #2c3037;
+}
+.dev-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 44px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--dev-bar, #fff);
+}
+.dev-sbar {
+  flex: none;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px 0 28px;
+  background: var(--dev-bar, #fff);
+  color: var(--dev-ink, #111b21);
+  font: 500 13.5px 'Roboto', system-ui, sans-serif;
+  position: relative;
+}
+.dev-sbar .cam {
+  position: absolute;
+  left: 50%;
+  top: 9px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #17191d;
+  transform: translateX(-50%);
+}
+.dev-sbar .si {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.dev-homebar {
+  flex: none;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  /* va debajo del compositor: el canal le pasa el fondo de su chat */
+  background: var(--dev-bottom, var(--dev-bar, #fff));
+}
+.dev-homebar i {
+  width: 120px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--dev-ink, #111b21);
+  opacity: 0.75;
+}
+
+/* ---------- controles a la derecha del teléfono ---------- */
+.dev-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: none;
+}
+.dev-rail .grp {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 6px 16px -10px rgba(16, 24, 40, 0.25);
+}
+.dev-rail button {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font: 600 12px var(--sans);
+}
+.dev-rail button:hover {
+  color: var(--ink);
+  background: var(--soft);
+}
+.dev-rail button[aria-checked='true'] {
+  background: var(--ink);
+  color: #fff;
+}
+.dev-rail button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* En pantallas chicas el chat ocupa todo: sin marco ni controles laterales. */
+@media (max-width: 900px) {
+  .dev-wrap {
+    width: 100%;
+    height: 100%;
+  }
+  .dev-rail {
+    display: none;
+  }
+  .dev {
+    width: 100%;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  .dev::after,
+  .dev-sbar,
+  .dev-homebar {
+    display: none;
+  }
+  .dev-screen {
+    border-radius: 0;
+  }
+}
