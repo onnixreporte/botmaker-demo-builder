@@ -30,6 +30,7 @@ Los pasos se ejecutan en orden. Los pasos que ramifican (`list`, `buttons`, `con
 | `media(spec, { caption? })` | Imagen, documento, video o audio | `media({ type: 'document', name: 'Bases.pdf' })` |
 | `ask(texto, variable, { validate, error, skipIf, escape })` | Pregunta abierta | `ask('Tu cédula', 'cedula', { validate: V.cedulaPY, error: T.ERR })` |
 | `askImage(texto, variable)` | Pide una foto | `askImage('Foto del frente de tu CI', 'ci_frente')` |
+| `flow(texto, { cta, screens, flowName?, saveAs?, retry? })` | WhatsApp Flow: formulario de una o más pantallas | ver abajo |
 | `list(texto, { button, rows, section?, dynamic?, saveAs?, onFreeText?, onTimeout? })` | Lista interactiva | ver abajo |
 | `buttons(texto, opciones, { header?, footer?, saveAs? })` | Hasta 3 botones | `buttons('¿Seguimos?', [opt('si','Sí',[...]), opt('no','No','fin')])` |
 | `opt(id, título, destino?, { description?, match?, set? })` | Opción. `destino`: pasos o id de intención | `opt('saldos', 'Saldos y pagos', 'saldos')` |
@@ -97,6 +98,37 @@ list(T.ENCUESTA, {
 
 `match` define qué textos eligen la opción. Por defecto, el número de posición (1, 2, 3…) y el título.
 
+### WhatsApp Flows
+
+Cuando hay que pedir varios datos seguidos, un Flow los junta en un formulario nativo en vez de preguntar uno por uno. El cliente toca el botón (`cta`), completa las pantallas y el bot recibe todo junto: cada campo queda en la variable de su `name` y el flujo sigue con el paso siguiente.
+
+```ts
+flow('Completá los datos de tu propiedad 👇', {
+  cta: 'Ofrecer propiedad',            // botón del mensaje (Meta recomienda hasta 30, sin emojis)
+  flowName: 'idesa_ofrecer_propiedad', // nombre en el Administrador de WhatsApp
+  screens: [
+    screen('CONTACTO', 'Tus datos', [
+      F.body('Te vamos a contactar a este número.'),
+      F.text('nombre', 'Nombre y apellido', { required: true }),
+      F.text('telefono', 'Teléfono', { required: true, input: 'phone', helper: 'Ej.: 0981 123 456' }),
+    ]),                                // botón del pie: "Continuar" por defecto
+    screen('PROPIEDAD', 'Tu propiedad', [
+      F.text('superficie', 'Superficie (ha)', { required: true, input: 'number' }),
+      F.dropdown('zona', 'Zona', ['Central', 'Itapúa']),
+      F.radio('tipo', 'Tipo', [{ id: 'lote', title: 'Lote' }, { id: 'campo', title: 'Campo' }]),
+    ], 'Enviar'),
+  ],
+}),
+cond('¿Superficie ≥ 5 ha?', [when('sí', (c) => Number(c.vars.superficie) >= 5, [])], [...]),
+```
+
+Componentes: `F.heading`, `F.subheading`, `F.body` (texto) y `F.text` (`input`: `text`, `number`, `email`, `phone`), `F.textarea`, `F.dropdown`, `F.radio`, `F.checkbox` (guarda un array de ids), `F.date`, `F.optin` (guarda `true`/`false`).
+
+- En el teléfono se validan los obligatorios y el tipo de entrada, como en WhatsApp. Las reglas de negocio (≥ 5 ha, formato de celular) van después, en una `cond`.
+- Si el cliente escribe en vez de completarlo, cuenta como "No entiende" y se reenvía el Flow. El escape global (`askEscape`, ej. "1") y las palabras clave funcionan igual que en una pregunta.
+- El linter aplica los límites de Meta: etiqueta de 20 caracteres (`text`, `textarea`, `dropdown`), 30 (`radio`, `checkbox`) y 40 (`date`), opciones de 30, botón del pie de 35 y nombres de campo únicos.
+- En tests: `await s.submitFlow({ nombre: 'Ana', superficie: '12,5' })`. Falla si el teléfono no dejaría enviarlo.
+
 ### Endpoints
 
 ```ts
@@ -158,6 +190,7 @@ await s.send('hola');
 await s.pick('Soy cliente');           // por título (o parte del título)
 await s.send('1234567');
 await s.sendMedia({ type: 'image' });
+await s.submitFlow({ nombre: 'Ana' });  // completa el último WhatsApp Flow
 await s.tick();                        // inactividad o tiempo límite
 await s.template('recordatorio', 'Ver mi saldo');
 s.lastText(); s.options(); s.vars; s.mode; s.intent; s.transcript(); s.logTitles('act');

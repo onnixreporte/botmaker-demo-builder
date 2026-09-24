@@ -1,4 +1,5 @@
 import { display, interpolate, norm } from './text';
+import { flowFields, flowSummary, normalizeFlowValue } from './flow';
 import { WA } from './limits';
 import type {
   ApiStep,
@@ -7,6 +8,9 @@ import type {
   ButtonsStep,
   Choice,
   Ctx,
+  FlowScreen,
+  FlowStep,
+  FlowValues,
   HandoffStep,
   Intent,
   ListStep,
@@ -39,6 +43,8 @@ export interface UserInput {
   /** Respuesta a un mensaje interactivo (lista o botón). */
   replyTo?: { messageId: string; choiceId: string };
   media?: UserMedia;
+  /** Respuesta a un WhatsApp Flow: todos los campos juntos. */
+  flowReply?: { messageId: string; values: FlowValues };
 }
 
 export type ChatItem =
@@ -46,7 +52,9 @@ export type ChatItem =
   | { id: string; from: 'bot'; kind: 'media'; media: MediaSpec; caption?: string; time: string }
   | { id: string; from: 'bot'; kind: 'list'; text: string; header?: string; footer?: string; button: string; section?: string; rows: Row[]; time: string }
   | { id: string; from: 'bot'; kind: 'buttons'; text: string; header?: MediaSpec; footer?: string; buttons: { id: string; title: string }[]; time: string; template?: string }
+  | { id: string; from: 'bot'; kind: 'flow'; text: string; header?: string; footer?: string; cta: string; flowName?: string; screens: FlowScreen[]; time: string }
   | { id: string; from: 'user'; kind: 'text'; text: string; subtext?: string; time: string }
+  | { id: string; from: 'user'; kind: 'flow'; flowId: string; answers: { label: string; value: string }[]; time: string }
   | { id: string; from: 'user'; kind: 'media'; media: UserMedia; time: string };
 
 export type ReceiptStatus = 'sent' | 'delivered' | 'read';
@@ -146,6 +154,7 @@ export class Engine {
   private logSeq = 0;
   private onceSeen = new Set<string>();
   private templateMsgs = new Map<string, string>();
+  private flowMsgs = new Map<string, FlowScreen[]>();
   private fallbackCount = 0;
   private prevIntent: string | null = null;
   private lastRes: unknown;
@@ -259,6 +268,7 @@ export class Engine {
     this.running = false;
     this.onceSeen.clear();
     this.templateMsgs.clear();
+    this.flowMsgs.clear();
     this.fallbackCount = 0;
     this.prevIntent = null;
     this.state = this.initialState();
@@ -400,6 +410,8 @@ export class Engine {
       }
       case 'api':
         return this.api(step);
+      case 'flow':
+        return this.flow(step);
       case 'goto':
         throw new Jump(step.target);
       case 'handoff':
@@ -564,6 +576,54 @@ export class Engine {
       this.log('intent', '↳ No entiende', `Intento ${n} de ${fb.maxAttempts}`);
       await this.say(n === 1 ? (isList ? fb.list : fb.buttons) : fb.retry);
       await show(n === (fb.offerAgentOnAttempt ?? 2));
+    }
+  }
+
+  private async flow(step: FlowStep): Promise<void> {
+    const cfg = this.bot.config;
+    const valid = new Set<string>();
+    const show = async () => {
+      const text = this.text(step.text);
+      await this.typing(text.length);
+      const id = this.botItem({ kind: 'flow', text, header: step.header, footer: step.footer, cta: step.cta, flowName: step.flowName, screens: step.screens });
+      this.flowMsgs.set(id, step.screens);
+      valid.add(id);
+    };
+    await show();
+    for (;;) {
+      const ev = await this.next('input');
+      if (ev.type === 'tick') {
+        await this.inactivity();
+        continue;
+      }
+      const inp = ev.input;
+      if (inp.flowReply && valid.has(inp.flowReply.messageId)) {
+        this.resetFallback();
+        const values: FlowValues = {};
+        for (const f of flowFields(step.screens)) {
+          const v = inp.flowReply.values[f.name];
+          if (v != null && v !== '') values[f.name] = normalizeFlowValue(f, v);
+        }
+        this.log('user', `Envió el Flow “${step.flowName ?? step.cta}”`, flowSummary(step.screens, values).map((a) => `${a.label}: ${a.value}`).join(' · '));
+        for (const [k, v] of Object.entries(values)) this.setVar(k, v);
+        if (step.saveAs) this.setVar(step.saveAs, values);
+        return;
+      }
+      const esc = cfg.askEscape;
+      if (esc && inp.text != null && !inp.media && norm(inp.text) === norm(esc.input)) {
+        this.log('info', `Escape “${esc.input}”`, `Va a ${this.nameOf(esc.goto)}`);
+        throw new Jump(esc.goto);
+      }
+      const kw = this.keyword(inp);
+      if (kw) throw kw;
+      if (inp.media) {
+        const r = await this.unexpectedMedia(inp.media.type, 'choice');
+        if (r === 'handled') continue;
+      }
+      const n = this.bumpFallback();
+      this.log('intent', '↳ No entiende', `Escribió en vez de completar el Flow · intento ${n} de ${cfg.fallback.maxAttempts}`);
+      await this.say(step.retry ?? `Para continuar, tocá “${step.cta}” y completá el formulario.`);
+      await show();
     }
   }
 
@@ -887,6 +947,10 @@ export class Engine {
     const id = `m${++this.seq}`;
     const time = this.hhmm();
     if (input.media) return { id, from: 'user', kind: 'media', media: input.media, time };
+    if (input.flowReply) {
+      const screens = this.flowMsgs.get(input.flowReply.messageId) ?? [];
+      return { id, from: 'user', kind: 'flow', flowId: input.flowReply.messageId, answers: flowSummary(screens, input.flowReply.values), time };
+    }
     return { id, from: 'user', kind: 'text', text: input.text ?? '', subtext: input.subtext, time };
   }
 

@@ -28,6 +28,8 @@
   --wa-press: rgba(11, 20, 26, 0.05);
   --wa-line: #e9edef;
   --wa-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  --wa-scroll: rgba(11, 20, 26, 0.22);
+  --wa-err: #ea0038;
   --wa-font: 'Roboto', system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
 [data-theme='dark'] {
@@ -52,6 +54,8 @@
   --wa-press: rgba(255, 255, 255, 0.06);
   --wa-line: #2a3942;
   --wa-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.3);
+  --wa-scroll: rgba(233, 237, 239, 0.18);
+  --wa-err: #f15c6d;
 }
 [data-channel='whatsapp'] {
   --dev-bar: var(--wa-bar);
@@ -73,6 +77,25 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Barras de desplazamiento finas dentro del teléfono (chat, listas, formularios). */
+.wa-app * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--wa-scroll) transparent;
+}
+.wa-app ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.wa-app ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.wa-app ::-webkit-scrollbar-thumb {
+  background: var(--wa-scroll);
+  border-radius: 3px;
+}
+.wa-app ::-webkit-scrollbar-thumb:hover {
+  background: var(--wa-sub);
+}
 /* ---------- encabezado ---------- */
 .wa-head {
   flex: none;
@@ -451,10 +474,22 @@
   border-radius: 2px;
   background: #8fa59a;
 }
-.wa-vdur {
+/* Pie de un archivo sin texto (documento, audio, contacto): hora y checks en su propia fila. */
+.wa-mfoot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 7px 5px 10px;
   font-size: 11px;
   color: var(--wa-sub);
-  padding: 0 10px 6px 62px;
+}
+.wa-mfoot .wa-meta {
+  float: none;
+  top: 0;
+  margin: 0 0 0 auto;
+}
+.wa-mfoot .dur {
+  padding-left: 52px; /* alineada con la onda, debajo del avatar */
 }
 .wa-loc {
   margin: 3px;
@@ -843,6 +878,263 @@
   z-index: 12;
   white-space: nowrap;
   pointer-events: none;
+}
+
+/* ---------- WhatsApp Flow ---------- */
+.wa-flow-sent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+.wa-flow-sent svg {
+  color: var(--wa-teal);
+}
+.wa-flow-ans {
+  margin: 0;
+  padding: 2px 9px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.wa-flow-ans dt {
+  color: var(--wa-sub);
+  font-size: 12px;
+}
+.wa-flow-ans dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.wa-m.out .wa-ia-btn {
+  border-top-color: rgba(11, 20, 26, 0.08);
+}
+[data-theme='dark'] .wa-m.out .wa-ia-btn {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+/* formulario a pantalla completa */
+.wa-flow {
+  width: 100%;
+  height: 94%;
+  background: var(--wa-surface);
+  color: var(--wa-ink);
+  border-radius: 18px 18px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: wa-up 0.2s ease-out;
+}
+.wa-flow-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--wa-line);
+}
+.wa-flow-head .t {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wa-flow-step {
+  width: 40px;
+  flex: none;
+  text-align: center;
+  font-size: 12px;
+  color: var(--wa-sub);
+}
+.wa-flow-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 18px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.wa-flow-h {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.wa-flow-sh {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.wa-flow-p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--wa-sub);
+  white-space: pre-wrap;
+}
+
+/* campo con la etiqueta sobre el borde (estilo Material, como los Flows de Android) */
+.wa-flow-field {
+  position: relative;
+}
+.wa-flow-field label {
+  position: absolute;
+  left: 10px;
+  top: -8px;
+  padding: 0 5px;
+  background: var(--wa-surface);
+  font-size: 12px;
+  color: var(--wa-sub);
+  pointer-events: none;
+}
+.wa-flow-field input,
+.wa-flow-field select,
+.wa-flow-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--wa-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--wa-ink);
+  font: 16px var(--wa-font);
+  padding: 14px 14px 12px;
+  outline: none;
+  color-scheme: light;
+}
+[data-theme='dark'] .wa-flow-field :is(input, select, textarea) {
+  color-scheme: dark;
+}
+.wa-flow-field select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--wa-sub) 50%), linear-gradient(135deg, var(--wa-sub) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 50%, calc(100% - 15px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+.wa-flow-field select option {
+  background: var(--wa-surface);
+  color: var(--wa-ink);
+}
+.wa-flow-field textarea {
+  resize: none;
+}
+.wa-flow-field :is(input, select, textarea):focus {
+  border-color: var(--wa-teal);
+  box-shadow: inset 0 0 0 1px var(--wa-teal);
+}
+.wa-flow-field:focus-within label {
+  color: var(--wa-teal);
+}
+.wa-flow-field.err :is(input, select, textarea) {
+  border-color: var(--wa-err);
+}
+.wa-flow-field.err label {
+  color: var(--wa-err);
+}
+.wa-flow-help {
+  font-size: 12px;
+  color: var(--wa-sub);
+  margin: 5px 4px 0;
+}
+.wa-flow-help.err {
+  color: var(--wa-err);
+}
+.wa-flow-group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.wa-flow-group legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.wa-flow-group.err legend {
+  color: var(--wa-err);
+}
+.wa-flow-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--wa-line);
+  cursor: pointer;
+}
+.wa-flow-opt .tx {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.wa-flow-opt b {
+  font-weight: 400;
+  font-size: 15.5px;
+}
+.wa-flow-opt small {
+  font-size: 13px;
+  color: var(--wa-sub);
+}
+.wa-flow-opt input,
+.wa-flow-optin input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--wa-green);
+  cursor: pointer;
+}
+.wa-flow-optin label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.wa-flow-optin.err span {
+  color: var(--wa-err);
+}
+.wa-flow-foot {
+  flex: none;
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--wa-line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.wa-flow-btn {
+  width: 100%;
+  border: 0;
+  border-radius: 24px;
+  padding: 13px;
+  background: var(--wa-green);
+  color: #fff;
+  font: 500 15.5px var(--wa-font);
+  cursor: pointer;
+}
+[data-theme='dark'] .wa-flow-btn {
+  color: #0b141a;
+}
+.wa-flow-btn:focus-visible {
+  outline: 2px solid var(--wa-teal);
+  outline-offset: 2px;
+}
+.wa-flow-foot small {
+  font-size: 12px;
+  color: var(--wa-sub);
+  text-align: center;
+}
+.wa-flow-foot .wa-link {
+  text-decoration: none;
 }
 
 /* ---------- vista previa (canvas) ---------- */

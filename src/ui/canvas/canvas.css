@@ -310,6 +310,9 @@ button.fl-stat {
 .fl-sw.ask {
   background: var(--k-ask);
 }
+.fl-sw.flow {
+  background: var(--k-flow);
+}
 .fl-sw.action,
 .fl-sw.api,
 .fl-sw.handoff {
@@ -434,6 +437,12 @@ button.fl-stat {
 }
 .nd.k-ask {
   background: var(--k-ask);
+}
+.nd.k-flow {
+  background: var(--k-flow);
+}
+.nd.k-flow .pl {
+  color: var(--k-flow);
 }
 .nd.k-action,
 .nd.k-api,

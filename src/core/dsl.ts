@@ -10,6 +10,10 @@ import type {
   ConditionStep,
   Ctx,
   DynamicRows,
+  FlowComponent,
+  FlowOption,
+  FlowScreen,
+  FlowStep,
   GotoStep,
   HandoffStep,
   Intent,
@@ -115,6 +119,41 @@ export function api(
   const other = typeof otherwise === 'string' ? { otherwiseGoto: otherwise } : otherwise ? { otherwise } : {};
   return { kind: 'api', endpoint, ...rest, ...other };
 }
+
+/**
+ * Mensaje con un WhatsApp Flow (formulario nativo de varias pantallas).
+ * Al enviarlo, cada campo queda en la variable de su `name` y el flujo sigue con el paso siguiente.
+ *
+ *   flow('Completá tus datos 👇', {
+ *     cta: 'Completar datos',
+ *     screens: [screen('DATOS', 'Tus datos', [F.text('nombre', 'Nombre y apellido', { required: true })], 'Enviar')],
+ *   })
+ */
+export function flow(text: TextValue, o: Omit<FlowStep, 'kind' | 'text'>): FlowStep {
+  return { kind: 'flow', text, ...o };
+}
+
+/** Pantalla de un Flow. `button` es el botón del pie ("Continuar" o "Enviar"). */
+export function screen(id: string, title: string, children: FlowComponent[], button = 'Continuar'): FlowScreen {
+  return { id, title, children, button };
+}
+
+type FieldOpts = { required?: boolean; helper?: string };
+const opts = (o: (string | FlowOption)[]): FlowOption[] => o.map((x) => (typeof x === 'string' ? { id: x, title: x } : x));
+
+/** Componentes de una pantalla de Flow. Las opciones pueden ser textos o `{ id, title }`. */
+export const F = {
+  heading: (text: string): FlowComponent => ({ kind: 'heading', text }),
+  subheading: (text: string): FlowComponent => ({ kind: 'subheading', text }),
+  body: (text: string): FlowComponent => ({ kind: 'body', text }),
+  text: (name: string, label: string, o: FieldOpts & { input?: 'text' | 'number' | 'email' | 'phone' } = {}): FlowComponent => ({ kind: 'text', name, label, ...o }),
+  textarea: (name: string, label: string, o: FieldOpts = {}): FlowComponent => ({ kind: 'textarea', name, label, ...o }),
+  dropdown: (name: string, label: string, options: (string | FlowOption)[], o: FieldOpts = {}): FlowComponent => ({ kind: 'dropdown', name, label, options: opts(options), ...o }),
+  radio: (name: string, label: string, options: (string | FlowOption)[], o: FieldOpts = {}): FlowComponent => ({ kind: 'radio', name, label, options: opts(options), ...o }),
+  checkbox: (name: string, label: string, options: (string | FlowOption)[], o: FieldOpts = {}): FlowComponent => ({ kind: 'checkbox', name, label, options: opts(options), ...o }),
+  date: (name: string, label: string, o: FieldOpts = {}): FlowComponent => ({ kind: 'date', name, label, ...o }),
+  optin: (name: string, label: string, o: FieldOpts = {}): FlowComponent => ({ kind: 'optin', name, label, ...o }),
+};
 
 export function goto(target: Target, o: Notes = {}): GotoStep {
   return { kind: 'goto', target, ...o };

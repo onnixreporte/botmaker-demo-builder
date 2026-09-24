@@ -10,6 +10,8 @@ import {
   createNav,
   defineBot,
   dynamicRows,
+  F,
+  flow,
   goto,
   handoff,
   has,
@@ -19,6 +21,7 @@ import {
   opt,
   resumeQueue,
   say,
+  screen,
   set,
   when,
 } from '../../core/dsl';
@@ -468,11 +471,33 @@ const novedades = intent('nov', 'Canal de novedades', 'Menú principal', [
 
 const vender = intent('vender', 'Vender propiedad', 'Menú principal', [
   say(T.VENDER),
-  ask('Ingresar Nombre y Apellido (1- Menú principal ⤴)', 'oferta_nombre', { validate: V.name, error: 'Ingresá tu nombre y apellido.\n1- Menú principal ⤴' }),
-  ask('Ingresar un Nro. de Teléfono', 'oferta_telefono', { validate: V.phonePY, error: T.ERR_CELULAR }),
-  ask('En qué Ciudad/Distrito se encuentra la Propiedad: (1- Menú principal ⤴)', 'oferta_ciudad', { validate: V.name, error: 'Ingresá la ciudad o el distrito.\n1- Menú principal ⤴' }),
-  ask('Precio en guaraníes por hectárea: (1- Menú principal ⤴)', 'oferta_precio_ha', { validate: V.money, error: 'Ingresá solo números, por ejemplo 150000000.\n1- Menú principal ⤴' }),
-  ask('Superficie en hectáreas:', 'oferta_superficie', { validate: V.decimal, error: 'Ingresá la superficie en números, por ejemplo 12,5.\n1- Menú principal ⤴' }),
+  flow('Completá los datos de tu propiedad y un asesor se comunica con vos 👇', {
+    label: 'Formulario · Ofrecer propiedad',
+    cta: 'Ofrecer propiedad',
+    flowName: 'idesa_ofrecer_propiedad',
+    retry: 'Para continuar, tocá “Ofrecer propiedad” y completá el formulario.\n1- Menú principal ⤴',
+    suggested: true,
+    screens: [
+      screen('CONTACTO', 'Tus datos', [
+        F.body('Te vamos a contactar a este número.'),
+        F.text('oferta_nombre', 'Nombre y apellido', { required: true }),
+        F.text('oferta_telefono', 'Teléfono', { required: true, input: 'phone', helper: 'Ej.: 0981 123 456' }),
+      ]),
+      screen(
+        'PROPIEDAD',
+        'Tu propiedad',
+        [
+          F.body('IDESA compra propiedades de 5 hectáreas en adelante.'),
+          F.text('oferta_ciudad', 'Ciudad o distrito', { required: true }),
+          F.text('oferta_precio_ha', 'Precio por ha (Gs.)', { required: true, input: 'number', helper: 'Solo números, sin puntos. Ej.: 150000000' }),
+          F.text('oferta_superficie', 'Superficie (ha)', { required: true, input: 'number', helper: 'Ej.: 12,5' }),
+        ],
+        'Enviar',
+      ),
+    ],
+    note: 'El documento pide los 5 datos con preguntas sueltas: "Ingresar Nombre y Apellido", "Ingresar un Nro. de Teléfono", "En qué Ciudad/Distrito se encuentra la Propiedad", "Precio en guaraníes por hectárea" y "Superficie en hectáreas". Las etiquetas se acortaron al límite de 20 caracteres de Meta.',
+    todo: 'Crear el Flow en el Administrador de WhatsApp y validar el celular (09XXXXXXXX) al recibirlo: el Flow solo controla que sea un teléfono.',
+  }),
   cond('¿Superficie ≥ 5 ha?', [when('SI CUMPLE', (c) => Number(c.vars.oferta_superficie) >= 5, [])], [
     say('IDESA solo compra propiedades de 5 hectáreas en adelante.', { suggested: true }),
     buttons('¿Te ayudamos con algo más?', [opt('main', 'Menú principal', 'main'), opt('fin', 'Finalizar sesión', 'fin')], { suggested: true }),
@@ -485,14 +510,33 @@ const vender = intent('vender', 'Vender propiedad', 'Menú principal', [
   }),
   say(T.GRACIAS),
   goto('fin'),
-], { description: 'Cinco datos del oferente y alta en el EP1.' });
+], { description: 'WhatsApp Flow con los cinco datos del oferente y alta en el EP1.' });
 
 const departamento = intent('depto', 'Adquirir departamento', 'Menú principal', [
-  ask('Ingresar Nombre y Apellido (1- Menú principal ⤴)', 'nombre_cliente', { validate: V.name, error: 'Ingresá tu nombre y apellido.\n1- Menú principal ⤴' }),
-  ask('Ingresar un Nro. de Teléfono', 'celular_cliente', { validate: V.phonePY, error: T.ERR_CELULAR }),
+  flow('Dejanos tus datos y un asesor te contacta 👇', {
+    label: 'Formulario · Adquirir departamento',
+    cta: 'Dejar mis datos',
+    flowName: 'idesa_departamento',
+    retry: 'Para continuar, tocá “Dejar mis datos” y completá el formulario.\n1- Menú principal ⤴',
+    suggested: true,
+    screens: [
+      screen(
+        'CONTACTO',
+        'Adquirir departamento',
+        [
+          F.body('Completá tus datos para que un asesor de ventas te contacte.'),
+          F.text('nombre_cliente', 'Nombre y apellido', { required: true }),
+          F.text('celular_cliente', 'Teléfono', { required: true, input: 'phone', helper: 'Ej.: 0981 123 456' }),
+        ],
+        'Enviar',
+      ),
+    ],
+    note: 'El documento pide "Ingresar Nombre y Apellido" e "Ingresar un Nro. de Teléfono" con preguntas sueltas.',
+    todo: 'Crear el Flow en el Administrador de WhatsApp y validar el celular (09XXXXXXXX) al recibirlo.',
+  }),
   say(T.DEPTO),
   handoff('Ventas', { topic: 'Interesado en departamento' }),
-], { description: 'Nombre, teléfono y derivación a Ventas.' });
+], { description: 'WhatsApp Flow con nombre y teléfono, y derivación a Ventas.' });
 
 const sugerencias = intent('sug', 'Sugerencias', 'Menú principal', [
   buttons('¿Es usted una persona con discapacidad?', [

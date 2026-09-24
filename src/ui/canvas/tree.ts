@@ -1,13 +1,14 @@
 import type { BotDef, Branch, Choice, Intent, Notes, Step, Target } from '../../core/types';
 import { WA } from '../../core/limits';
 import { firstLine } from '../../core/text';
+import { flowFields } from '../../core/flow';
 
 /*
  * Convierte una intención (pasos estructurados) en un árbol dibujable
  * con el vocabulario de Botmaker, lo ubica en el plano y calcula las conexiones.
  */
 
-export type NodeKind = 'start' | 'message' | 'media' | 'ask' | 'menu' | 'option' | 'condition' | 'action' | 'api' | 'goto' | 'handoff' | 'pass' | 'event';
+export type NodeKind = 'start' | 'message' | 'media' | 'ask' | 'flow' | 'menu' | 'option' | 'condition' | 'action' | 'api' | 'goto' | 'handoff' | 'pass' | 'event';
 
 export interface RBranch {
   label?: string;
@@ -49,6 +50,7 @@ export const NODE_W: Record<NodeKind, number> = {
   message: 214,
   media: 214,
   ask: 214,
+  flow: 214,
   menu: 214,
   option: 160,
   condition: 112,
@@ -121,6 +123,17 @@ function stepChain(bot: BotDef, s: Step): Chain {
     }
     case 'ask':
       return one(node('ask', s._id, s.label ?? (s.expect === 'image' ? 'Pedir una foto' : 'Pregunta'), { sub: `Guarda en ${s.saveAs}`, step: s, notes }));
+    case 'flow': {
+      const fields = flowFields(s.screens).length;
+      return one(
+        node('flow', s._id, s.label ?? s.flowName ?? 'WhatsApp Flow', {
+          sub: `Botón “${s.cta}” · ${s.screens.length} ${s.screens.length === 1 ? 'pantalla' : 'pantallas'} · ${fields} campos`,
+          pill: 'Flow',
+          step: s,
+          notes,
+        }),
+      );
+    }
     case 'list':
     case 'buttons': {
       const isList = s.kind === 'list';

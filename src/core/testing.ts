@@ -1,6 +1,7 @@
 import { Engine, type ChatItem, type LogEntry, type Scenario, type UserMedia } from './engine';
+import { checkFlowValue, flowFields } from './flow';
 import { norm } from './text';
-import type { BotDef } from './types';
+import type { BotDef, FlowValues } from './types';
 
 /**
  * Sesión de prueba sin UI: escribís como el cliente y leés lo que respondió el bot.
@@ -33,6 +34,14 @@ export function createSession(bot: BotDef, scenario: Partial<Scenario> = {}) {
     return undefined;
   };
 
+  const lastFlow = () => {
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      if (it.from === 'bot' && it.kind === 'flow') return it;
+    }
+    return undefined;
+  };
+
   const s = {
     engine,
     items,
@@ -52,6 +61,22 @@ export function createSession(bot: BotDef, scenario: Partial<Scenario> = {}) {
       const r = rows.find((x) => norm(x.title) === t) ?? rows.find((x) => norm(x.title).includes(t));
       if (!r) throw new Error(`No hay una opción "${title}". Opciones: ${rows.map((x) => x.title).join(' | ')}`);
       engine.send({ text: r.title, subtext: (r as { description?: string }).description, replyTo: { messageId: msg.id, choiceId: r.id } });
+      await engine.settle();
+      return s;
+    },
+    /**
+     * Completa y envía el último WhatsApp Flow. Falla si un campo no pasaría
+     * la validación del teléfono (obligatorio vacío, email o número inválido).
+     */
+    async submitFlow(values: FlowValues) {
+      const msg = lastFlow();
+      if (!msg) throw new Error('No hay ningún Flow en la conversación');
+      const errors = flowFields(msg.screens)
+        .map((f) => [f, checkFlowValue(f, values[f.name])] as const)
+        .filter(([, e]) => e)
+        .map(([f, e]) => `${f.name}: ${e}`);
+      if (errors.length) throw new Error(`El Flow no se puede enviar: ${errors.join(' | ')}`);
+      engine.send({ flowReply: { messageId: msg.id, values } });
       await engine.settle();
       return s;
     },
@@ -104,6 +129,8 @@ export function createSession(bot: BotDef, scenario: Partial<Scenario> = {}) {
           if (i.kind === 'text') return `${who}: ${i.text}`;
           if (i.kind === 'list') return `${who}: ${i.text}\n   [${i.button}] ${i.rows.map((r) => r.title).join(' | ')}`;
           if (i.kind === 'buttons') return `${who}: ${i.text}\n   ${i.buttons.map((b) => `(${b.title})`).join(' ')}`;
+          if (i.kind === 'flow' && i.from === 'bot') return `${who}: ${i.text}\n   [Flow · ${i.cta}] ${flowFields(i.screens).map((f) => f.name).join(', ')}`;
+          if (i.kind === 'flow') return `${who}: [Flow enviado] ${i.answers.map((a) => `${a.label}: ${a.value}`).join(' · ')}`;
           return `${who}: [${i.media.type}]`;
         })
         .join('\n');

@@ -207,6 +207,72 @@ export interface ApiStep extends Base {
   otherwiseGoto?: Target;
 }
 
+/* ---------- WhatsApp Flows (formularios nativos) ---------- */
+
+export interface FlowOption {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+interface FlowFieldBase {
+  /** Variable donde se guarda la respuesta. Única dentro del Flow. */
+  name: string;
+  label: string;
+  required?: boolean;
+  /** Texto de ayuda bajo el campo (máx. 80). */
+  helper?: string;
+}
+
+/**
+ * Componentes de una pantalla de Flow (nombres de Meta entre paréntesis):
+ * texto (TextHeading, TextSubheading, TextBody) y campos (TextInput, TextArea,
+ * Dropdown, RadioButtonsGroup, CheckboxGroup, DatePicker, OptIn).
+ */
+export type FlowComponent =
+  | { kind: 'heading' | 'subheading' | 'body'; text: string }
+  | (FlowFieldBase & { kind: 'text'; input?: 'text' | 'number' | 'email' | 'phone' })
+  | (FlowFieldBase & { kind: 'textarea' })
+  | (FlowFieldBase & { kind: 'dropdown' | 'radio' | 'checkbox'; options: FlowOption[] })
+  | (FlowFieldBase & { kind: 'date' })
+  | (FlowFieldBase & { kind: 'optin' });
+
+export type FlowField = Extract<FlowComponent, { name: string }>;
+
+export interface FlowScreen {
+  /** Id de la pantalla en el JSON del Flow (mayúsculas y guiones bajos). */
+  id: string;
+  /** Título en la barra superior del formulario. */
+  title: string;
+  children: FlowComponent[];
+  /** Botón del pie (Footer): "Continuar" en pantallas intermedias, "Enviar" en la última. */
+  button: string;
+}
+
+/** Valores que devuelve un Flow: texto, ids de opción o sí/no (OptIn). */
+export type FlowValues = Record<string, string | string[] | boolean>;
+
+/**
+ * Mensaje con un WhatsApp Flow: el cliente toca el botón, completa las pantallas
+ * y el bot recibe todos los campos juntos. Cada campo se guarda en la variable de su `name`.
+ */
+export interface FlowStep extends Base {
+  kind: 'flow';
+  /** Cuerpo del mensaje que lleva el botón. */
+  text: TextValue;
+  header?: string;
+  footer?: string;
+  /** Texto del botón que abre el Flow (se recomienda hasta 30 caracteres, sin emojis). */
+  cta: string;
+  /** Nombre del Flow en el Administrador de WhatsApp. */
+  flowName?: string;
+  screens: FlowScreen[];
+  /** Guarda además todas las respuestas juntas en esta variable. */
+  saveAs?: string;
+  /** Aviso si el cliente escribe en vez de completar el Flow. El escape global (ej. "1") también funciona acá. */
+  retry?: string;
+}
+
 export interface GotoStep extends Base {
   kind: 'goto';
   target: Target;
@@ -238,6 +304,7 @@ export type Step =
   | SetStep
   | ActionStep
   | ApiStep
+  | FlowStep
   | GotoStep
   | HandoffStep
   | CloseStep

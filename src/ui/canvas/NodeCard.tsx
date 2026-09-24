@@ -6,6 +6,7 @@ import type { RNode } from './tree';
 const ICON: Partial<Record<RNode['kind'], IconName>> = {
   media: 'image',
   ask: 'cursor',
+  flow: 'form',
   menu: 'list',
   action: 'bolt',
   api: 'code',

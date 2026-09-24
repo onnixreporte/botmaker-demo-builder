@@ -77,15 +77,15 @@ describe('IDESA', () => {
     expect(s.lastText()).toBe('Recibimos tu boleta ✅');
   });
 
-  it('vender propiedad sin cédula: el EP1 responde 99 y el lead no se registra', async () => {
+  const oferta = { oferta_nombre: 'Ana López', oferta_telefono: '0981 123 456', oferta_ciudad: 'Luque', oferta_precio_ha: '150000000', oferta_superficie: '12,5' };
+
+  it('vender propiedad con WhatsApp Flow, sin cédula: el EP1 responde 99 y el lead no se registra', async () => {
     const s = createSession(idesa);
     await s.send('hola');
     await s.pick('Vender mi propiedad');
-    await s.send('Ana López');
-    await s.send('0981 123 456');
-    await s.send('Luque');
-    await s.send('150.000.000');
-    await s.send('12,5');
+    expect(s.lastText()).toContain('Completá los datos de tu propiedad');
+    await s.submitFlow(oferta);
+    expect(s.vars).toMatchObject({ oferta_telefono: '0981123456', oferta_superficie: '12.5' });
     expect(s.logTitles('act')).toContain('El lead no se registró');
     expect(s.intent).toBe('fin');
   });
@@ -94,9 +94,26 @@ describe('IDESA', () => {
     const s = createSession(idesa);
     await s.send('hola');
     await s.pick('Vender mi propiedad');
-    for (const t of ['Ana López', '0981123456', 'Luque', '150000000', '3']) await s.send(t);
+    await s.submitFlow({ ...oferta, oferta_superficie: '3' });
     expect(s.botTexts()).toContain('IDESA solo compra propiedades de 5 hectáreas en adelante.');
     expect(s.options()).toEqual(['Menú principal', 'Finalizar sesión']);
+  });
+
+  it('adquirir departamento con WhatsApp Flow deriva a Ventas', async () => {
+    const s = createSession(idesa);
+    await s.send('hola');
+    await s.pick('Adquirir departamento');
+    await s.submitFlow({ nombre_cliente: 'Juan Pérez', celular_cliente: '0981 555 111' });
+    expect(s.vars).toMatchObject({ nombre_cliente: 'Juan Pérez', celular_cliente: '0981555111', cola_destino: 'Ventas' });
+    expect(s.mode).toBe('agent');
+  });
+
+  it('en un Flow, "1" vuelve al menú principal', async () => {
+    const s = createSession(idesa);
+    await s.send('hola');
+    await s.pick('Adquirir departamento');
+    await s.send('1');
+    expect(s.intent).toBe('main');
   });
 
   it('derivación fuera de horario', async () => {

@@ -4,6 +4,7 @@ import type { BotConfig, Row } from '../../core/types';
 import { Icon } from '../shared/icons';
 import { Avatar } from '../shared/Avatar';
 import { DEFAULT_GALLERY, sampleImage, type SampleKind } from '../shared/placeholders';
+import { FlowSheet } from './FlowSheet';
 import { Message } from './Message';
 import './whatsapp.css';
 
@@ -28,7 +29,11 @@ export interface WhatsAppChatProps {
   prefill?: { value: string; nonce: number };
 }
 
-type Layer = { type: 'list'; item: Extract<ChatItem, { kind: 'list' }> } | { type: 'attach' | 'gallery' | 'emoji' | 'menu' } | null;
+type Layer =
+  | { type: 'list'; item: Extract<ChatItem, { kind: 'list' }> }
+  | { type: 'flow'; item: Extract<ChatItem, { kind: 'flow'; from: 'bot' }> }
+  | { type: 'attach' | 'gallery' | 'emoji' | 'menu' }
+  | null;
 
 const EMOJIS = ['👍', '🙏', '😊', '😂', '❤️', '👋', '🙌', '🤔', '😅', '🏡', '✅', '💵'];
 const ATTACH: { key: string; label: string; color: string; icon: Parameters<typeof Icon>[0]['name'] }[] = [
@@ -50,6 +55,8 @@ export function WhatsAppChat({ profile, items, receipts, typing, online, notice,
   const [picked, setPicked] = useState<Row | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
+  /** Flows ya enviados: su botón queda deshabilitado, como en WhatsApp. */
+  const [flowsDone, setFlowsDone] = useState<Set<string>>(new Set());
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -161,6 +168,8 @@ export function WhatsAppChat({ profile, items, receipts, typing, online, notice,
               accent={profile.color}
               onReply={it.kind === 'buttons' ? (b) => send({ text: b.title, replyTo: { messageId: it.id, choiceId: b.id } }) : undefined}
               onOpenList={it.kind === 'list' ? () => setLayer({ type: 'list', item: it }) : undefined}
+              onOpenFlow={it.kind === 'flow' && it.from === 'bot' ? () => setLayer({ type: 'flow', item: it }) : undefined}
+              flowDone={flowsDone.has(it.id)}
             />
           );
         })}
@@ -246,6 +255,19 @@ export function WhatsAppChat({ profile, items, receipts, typing, online, notice,
             </div>
           </div>
         </div>
+      )}
+
+      {layer?.type === 'flow' && (
+        <FlowSheet
+          item={layer.item}
+          business={profile.name}
+          onClose={() => setLayer(null)}
+          onSubmit={(values) => {
+            const id = layer.item.id;
+            setFlowsDone((d) => new Set(d).add(id));
+            send({ flowReply: { messageId: id, values } });
+          }}
+        />
       )}
 
       {layer?.type === 'attach' && (

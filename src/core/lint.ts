@@ -1,5 +1,5 @@
-import { WA, chars } from './limits';
-import type { BotDef, Choice, Step, Target } from './types';
+import { FLOW, WA, chars } from './limits';
+import type { BotDef, Choice, FlowStep, Step, Target } from './types';
 
 export interface Issue {
   level: 'error' | 'warn';
@@ -104,6 +104,11 @@ export function lintBot(bot: BotDef): Issue[] {
           checkBody(s.text, s.footer, where, sid);
           checkChoices(s.buttons, 'buttons', where, sid ?? '');
           break;
+        case 'flow':
+          checkBody(s.text, s.footer, where, sid);
+          if (s.header && chars(s.header) > WA.header) issues.push({ level: 'error', where, stepId: sid, message: `Encabezado con ${chars(s.header)} caracteres (máx. ${WA.header})` });
+          checkFlow(s, where);
+          break;
         case 'condition':
           s.branches.forEach((b) => target(b.goto, where, b._id));
           target(s.otherwiseGoto, where, sid);
@@ -140,6 +145,42 @@ export function lintBot(bot: BotDef): Issue[] {
         checkSteps(s.otherwise, where);
       }
     });
+  };
+
+  const checkFlow = (s: FlowStep, where: string) => {
+    const sid = s._id;
+    const err = (message: string) => issues.push({ level: 'error', where, stepId: sid, message });
+    if (chars(s.cta) > FLOW.cta) issues.push({ level: 'warn', where, stepId: sid, message: `Botón del Flow "${s.cta}" con ${chars(s.cta)} caracteres (Meta recomienda hasta ${FLOW.cta})` });
+    if (/\p{Extended_Pictographic}/u.test(s.cta)) issues.push({ level: 'warn', where, stepId: sid, message: 'Meta recomienda no usar emojis en el botón del Flow' });
+    if (!s.screens.length) err('Flow sin pantallas');
+    const names = new Set<string>();
+    const screenIds = new Set<string>();
+    for (const sc of s.screens) {
+      const at = `pantalla ${sc.id}`;
+      if (screenIds.has(sc.id)) err(`Pantalla repetida: "${sc.id}"`);
+      screenIds.add(sc.id);
+      if (!/^[A-Za-z_]+$/.test(sc.id) || sc.id === 'SUCCESS') err(`Id de pantalla inválido: "${sc.id}" (solo letras y guiones bajos; SUCCESS está reservado)`);
+      if (chars(sc.button) > FLOW.footerButton) err(`Botón "${sc.button}" de la ${at} con ${chars(sc.button)} caracteres (máx. ${FLOW.footerButton})`);
+      if (sc.children.length > FLOW.componentsPerScreen) err(`La ${at} tiene ${sc.children.length} componentes (máx. ${FLOW.componentsPerScreen})`);
+      if (!sc.children.some((c) => 'name' in c)) issues.push({ level: 'warn', where, stepId: sid, message: `La ${at} no tiene campos` });
+      for (const c of sc.children) {
+        if (!('name' in c)) {
+          const max = c.kind === 'body' ? FLOW.body : FLOW.heading;
+          if (chars(c.text) > max) err(`Texto de la ${at} con ${chars(c.text)} caracteres (máx. ${max})`);
+          continue;
+        }
+        if (names.has(c.name)) err(`Campo repetido en el Flow: "${c.name}"`);
+        names.add(c.name);
+        const max = FLOW.label[c.kind];
+        if (chars(c.label) > max) err(`Etiqueta "${c.label}" con ${chars(c.label)} caracteres (máx. ${max} en ${c.kind})`);
+        if (c.helper && chars(c.helper) > FLOW.helper) err(`Ayuda de "${c.label}" con ${chars(c.helper)} caracteres (máx. ${FLOW.helper})`);
+        if ('options' in c) {
+          if (!c.options.length) err(`"${c.label}" no tiene opciones`);
+          if (c.kind === 'dropdown' && c.options.length > FLOW.dropdownOptions) err(`"${c.label}" tiene ${c.options.length} opciones (máx. ${FLOW.dropdownOptions})`);
+          for (const o of c.options) if (chars(o.title) > FLOW.optionTitle) err(`Opción "${o.title}" con ${chars(o.title)} caracteres (máx. ${FLOW.optionTitle})`);
+        }
+      }
+    }
   };
 
   const checkBody = (t: unknown, footer: string | undefined, where: string, sid?: string) => {

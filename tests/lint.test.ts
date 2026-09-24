@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bots } from '../src/bots';
 import { formatIssues, lintBot } from '../src/core/lint';
-import { buttons, defineBot, intent, list, opt } from '../src/core/dsl';
+import { F, buttons, defineBot, flow, intent, list, opt, screen } from '../src/core/dsl';
 import idesa from '../src/bots/idesa/bot';
 import plantilla from '../src/bots/_plantilla/bot';
 
@@ -33,5 +33,30 @@ describe('linter', () => {
     expect(msgs).toContain('máx. 20');
     expect(msgs).toContain('no existe: "no-existe"');
     expect(msgs).toContain('inalcanzable');
+  });
+
+  it('detecta límites de WhatsApp Flows', () => {
+    const bad = defineBot({
+      ...idesa,
+      intents: [
+        ...idesa.intents,
+        intent('form', 'Form', 'Entrada', [
+          flow('Completá', {
+            cta: 'Un botón de Flow larguísimo, más de treinta',
+            screens: [
+              screen('UNO', 'Uno', [F.text('a', 'Una etiqueta de más de veinte'), F.text('a', 'Repetido')], 'Un botón de pie de más de treinta y cinco'),
+              screen('SUCCESS', 'Reservada', [F.radio('b', 'Tipo', ['Una opción con más de treinta caracteres'])]),
+            ],
+          }),
+        ]),
+      ],
+    });
+    const msgs = lintBot(bad).map((i) => i.message).join('\n');
+    expect(msgs).toContain('Meta recomienda hasta 30');
+    expect(msgs).toContain('máx. 20 en text');
+    expect(msgs).toContain('Campo repetido en el Flow: "a"');
+    expect(msgs).toContain('máx. 35');
+    expect(msgs).toContain('SUCCESS está reservado');
+    expect(msgs).toContain('máx. 30');
   });
 });

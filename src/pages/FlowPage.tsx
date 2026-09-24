@@ -421,6 +421,7 @@ export function FlowPage({ bot, initialIntent }: { bot: BotDef; initialIntent?: 
             <span><i className="fl-sw start" />Inicio</span>
             <span><i className="fl-sw message" />Mensaje / archivo</span>
             <span><i className="fl-sw ask" />Pregunta</span>
+            <span><i className="fl-sw flow" />WhatsApp Flow</span>
             <span><i className="fl-sw condition" />Condición</span>
             <span><i className="fl-sw action" />Acción / endpoint</span>
             <span><i className="fl-sw menu" />Menú y opciones</span>

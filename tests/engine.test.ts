@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { api, ask, buttons, close, cod, cond, defineBot, handoff, intent, list, opt, resumeQueue, say, set, when } from '../src/core/dsl';
+import { F, api, ask, buttons, close, cod, cond, defineBot, flow, handoff, intent, list, opt, resumeQueue, say, screen, set, when } from '../src/core/dsl';
 import { V } from '../src/core/validators';
 import { createSession } from '../src/core/testing';
 import type { BotDef } from '../src/core/types';
@@ -20,6 +20,7 @@ function miniBot(): BotDef {
       keywords: [
         { words: ['menu'], goto: 'main' },
         { words: ['agente'], goto: 'humano' },
+        { words: ['formulario'], goto: 'form' },
       ],
       askEscape: { input: '1', goto: 'main' },
       fallback: {
@@ -63,6 +64,17 @@ function miniBot(): BotDef {
         buttons('¿Algo más?', [opt('m', 'Menú', 'main'), opt('f', 'Salir', 'fin')]),
       ]),
       intent('humano', 'Humano', 'A', [say('Te derivo'), handoff('Q', { topic: 'Consulta' })]),
+      intent('form', 'Formulario', 'A', [
+        flow('Completá el formulario', {
+          cta: 'Abrir',
+          saveAs: 'form',
+          screens: [
+            screen('UNO', 'Uno', [F.text('nombre', 'Nombre', { required: true }), F.text('m2', 'Superficie', { input: 'number' })]),
+            screen('DOS', 'Dos', [F.radio('tipo', 'Tipo', ['Casa', 'Lote']), F.checkbox('extras', 'Extras', [{ id: 'p', title: 'Pileta' }, { id: 'q', title: 'Quincho' }]), F.optin('acepta', 'Acepto', { required: true })], 'Enviar'),
+          ],
+        }),
+        say('Gracias {{nombre}}'),
+      ]),
       intent('fin', 'Fin', 'A', [
         list('Calificá', {
           button: 'Calificar',
@@ -248,6 +260,31 @@ describe('motor', () => {
     await s.pick('Mis datos');
     await s.send('agente');
     expect(s.mode).toBe('agent');
+  });
+
+  it('WhatsApp Flow: guarda cada campo normalizado y sigue con el paso siguiente', async () => {
+    const s = createSession(miniBot());
+    await s.send('hola');
+    await s.send('formulario');
+    expect(s.lastText()).toBe('Completá el formulario');
+    await s.submitFlow({ nombre: ' Ana ', m2: '12,5', tipo: 'Casa', extras: ['p', 'q'], acepta: true });
+    expect(s.vars).toMatchObject({ nombre: 'Ana', m2: '12.5', tipo: 'Casa', extras: ['p', 'q'], acepta: true });
+    expect(s.vars.form).toMatchObject({ nombre: 'Ana', m2: '12.5' });
+    expect(s.lastText()).toBe('Gracias Ana');
+    const reply = s.items.find((i) => i.from === 'user' && i.kind === 'flow');
+    expect(reply && 'answers' in reply ? reply.answers : []).toContainEqual({ label: 'Extras', value: 'Pileta, Quincho' });
+  });
+
+  it('WhatsApp Flow: obligatorios, texto libre y escape al menú', async () => {
+    const s = createSession(miniBot());
+    await s.send('hola');
+    await s.send('formulario');
+    await expect(s.submitFlow({ m2: 'doce' })).rejects.toThrow(/nombre: Este campo es obligatorio.*m2: Ingresá solo números.*acepta: Este campo es obligatorio/);
+    await s.send('no quiero completar nada');
+    expect(s.botTexts()).toContain('Para continuar, tocá “Abrir” y completá el formulario.');
+    expect(s.items[s.items.length - 1]).toMatchObject({ from: 'bot', kind: 'flow' });
+    await s.send('1');
+    expect(s.intent).toBe('main');
   });
 
   it('reset vuelve todo al estado inicial', async () => {

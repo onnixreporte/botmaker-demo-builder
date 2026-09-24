@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import type { ChatItem } from '../../core/engine';
 import type { Issue } from '../../core/lint';
-import { WA, chars } from '../../core/limits';
-import type { BotDef, Row } from '../../core/types';
+import { flowFields, isField } from '../../core/flow';
+import { FLOW, WA, chars } from '../../core/limits';
+import type { BotDef, FlowScreen, Row } from '../../core/types';
 import { Icon } from '../shared/icons';
 import { Message } from '../whatsapp/Message';
 import '../whatsapp/whatsapp.css';
@@ -13,6 +14,7 @@ const TYPE: Record<RNode['kind'], string> = {
   message: 'Mensaje de texto',
   media: 'Enviar archivo',
   ask: 'Pregunta',
+  flow: 'WhatsApp Flow',
   menu: 'Menú',
   option: 'Opción',
   condition: 'Condición',
@@ -58,6 +60,71 @@ function Rows({ rows, max, maxDesc }: { rows: Row[]; max: number; maxDesc?: numb
         </div>
       ))}
     </div>
+  );
+}
+
+const FIELD: Record<string, string> = {
+  text: 'Texto',
+  textarea: 'Texto largo',
+  dropdown: 'Desplegable',
+  radio: 'Opción única',
+  checkbox: 'Varias opciones',
+  date: 'Fecha',
+  optin: 'Aceptación',
+};
+const INPUT: Record<string, string> = { number: 'número', email: 'email', phone: 'teléfono' };
+
+/** Pantallas del Flow con sus componentes y el conteo de caracteres contra los límites de Meta. */
+function FlowScreens({ screens }: { screens: FlowScreen[] }) {
+  return (
+    <>
+      {screens.map((sc, i) => (
+        <Section key={sc.id} title={`Pantalla ${i + 1} de ${screens.length} · ${sc.title}`}>
+          <div className="fl-rows">
+            {sc.children.map((c, k) =>
+              isField(c) ? (
+                <div className="fl-row" key={k}>
+                  <div>
+                    <div className="t">
+                      {c.label}
+                      {c.required ? ' *' : ''}
+                    </div>
+                    <div className="d">
+                      {FIELD[c.kind]}
+                      {c.kind === 'text' && c.input && INPUT[c.input] ? ` · ${INPUT[c.input]}` : ''} · guarda en {c.name}
+                      {'options' in c ? ` · ${c.options.map((o) => o.title).join(', ')}` : ''}
+                    </div>
+                  </div>
+                  <div className="fl-lims">
+                    <span className={`fl-lim${chars(c.label) > FLOW.label[c.kind] ? ' over' : ''}`}>
+                      {chars(c.label)}/{FLOW.label[c.kind]}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="fl-row" key={k}>
+                  <div>
+                    <div className="d">{c.kind === 'body' ? 'Texto' : 'Título'}</div>
+                    <div className="t">{c.text}</div>
+                  </div>
+                </div>
+              ),
+            )}
+            <div className="fl-row">
+              <div>
+                <div className="d">Botón del pie</div>
+                <div className="t">{sc.button}</div>
+              </div>
+              <div className="fl-lims">
+                <span className={`fl-lim${chars(sc.button) > FLOW.footerButton ? ' over' : ''}`}>
+                  {chars(sc.button)}/{FLOW.footerButton}
+                </span>
+              </div>
+            </div>
+          </div>
+        </Section>
+      ))}
+    </>
   );
 }
 
@@ -159,6 +226,25 @@ export function DetailPanel({ bot, node: n, issues, refs, onOpen, onClose }: Det
           );
         }
         break;
+      case 'flow': {
+        const fields = flowFields(s.screens);
+        preview = [
+          { id: 'p', from: 'bot', kind: 'flow', text: txt(s.text, s.example), header: s.header, footer: s.footer, cta: s.cta, flowName: s.flowName, screens: s.screens, time: T },
+          { id: 'u', from: 'user', kind: 'flow', flowId: 'p', answers: [], time: T },
+        ];
+        kv.push(['Botón', `${s.cta} (${chars(s.cta)}/${FLOW.cta} recomendados)`]);
+        if (s.flowName) kv.push(['Flow en Meta', s.flowName]);
+        kv.push(['Guarda en', fields.map((f) => f.name).join(', ') + (s.saveAs ? `
+Todo junto en ${s.saveAs}` : '')]);
+        kv.push(['Obligatorios', fields.filter((f) => f.required).map((f) => f.label).join(', ') || 'Ninguno']);
+        blocks.push(
+          <p key="fl">
+            El cliente toca el botón, completa {s.screens.length === 1 ? 'la pantalla' : `las ${s.screens.length} pantallas`} dentro de WhatsApp y el bot recibe todos los campos juntos. Si escribe en vez de completarlo, cuenta como “No entiende” y se reenvía el Flow.
+          </p>,
+        );
+        rows = <FlowScreens screens={s.screens} />;
+        break;
+      }
       case 'condition':
         kv.push(['Ramas', s.branches.map((b) => b.label).join(' · ') + (s._noElse ? '' : ' · NO CUMPLE NINGUNA')]);
         break;

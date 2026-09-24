@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { ChatItem, ReceiptStatus, UserMedia } from '../../core/engine';
 import type { MediaSpec } from '../../core/types';
 import { waHtml } from '../../core/text';
@@ -14,6 +14,10 @@ export interface MessageProps {
   status?: ReceiptStatus;
   onReply?: Reply;
   onOpenList?: () => void;
+  /** Abre el formulario de un WhatsApp Flow. */
+  onOpenFlow?: () => void;
+  /** El Flow ya se envió: el botón queda deshabilitado. */
+  flowDone?: boolean;
   /** Color de marca para placeholders. */
   accent?: string;
 }
@@ -86,7 +90,6 @@ export function MediaBlock({ media, accent }: { media: MediaSpec | UserMedia; ac
               ))}
             </span>
           </div>
-          <div className="wa-vdur">{m.duration ?? '0:07'}</div>
         </>
       );
     }
@@ -99,22 +102,48 @@ export function MediaBlock({ media, accent }: { media: MediaSpec | UserMedia; ac
       );
     case 'contact':
       return (
-        <>
-          <div className="wa-ctc">
-            <span className="av">
-              <Icon name="person" size={26} />
-            </span>
-            <b>{m.name ?? 'Contacto de ejemplo'}</b>
-          </div>
-          <div className="wa-ctc-act">Enviar mensaje</div>
-        </>
+        <div className="wa-ctc">
+          <span className="av">
+            <Icon name="person" size={26} />
+          </span>
+          <b>{m.name ?? 'Contacto de ejemplo'}</b>
+        </div>
       );
   }
   return null;
 }
 
+/** Respuesta del cliente a un Flow: "Respuesta enviada" y, al tocar, lo que completó. */
+function FlowReply({ answers, time, status }: { answers: { label: string; value: string }[]; time: string; status?: ReceiptStatus }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="wa-b">
+      <div className="wa-bt">
+        <span className="wa-flow-sent">
+          <Icon name="form" size={16} />
+          Respuesta enviada
+        </span>
+        <Meta time={time} out status={status} />
+      </div>
+      {open && answers.length > 0 && (
+        <dl className="wa-flow-ans">
+          {answers.map((a) => (
+            <div key={a.label}>
+              <dt>{a.label}</dt>
+              <dd>{a.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      <button type="button" className="wa-ia-btn" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <span>{open ? 'Ocultar respuesta' : 'Ver respuesta'}</span>
+      </button>
+    </div>
+  );
+}
+
 /** Un mensaje de la conversación, con el aspecto de WhatsApp. */
-export function Message({ item, first, status, onReply, onOpenList, accent }: MessageProps) {
+export function Message({ item, first, status, onReply, onOpenList, onOpenFlow, flowDone, accent }: MessageProps) {
   const out = item.from === 'user';
   const cls = `wa-m ${out ? 'out' : 'in'}${first ? ' first' : ''}`;
 
@@ -167,10 +196,12 @@ export function Message({ item, first, status, onReply, onOpenList, accent }: Me
           ) : overlay ? (
             <Meta time={item.time} out={out} status={status} overlay />
           ) : (
-            <div className="wa-bt" style={{ paddingTop: 0 }}>
+            <div className="wa-mfoot">
+              {media.type === 'audio' && <span className="dur">{('duration' in media && media.duration) || '0:07'}</span>}
               <Meta time={item.time} out={out} status={status} />
             </div>
           )}
+          {media.type === 'contact' && <div className="wa-ctc-act">Enviar mensaje</div>}
         </div>
       );
       break;
@@ -208,6 +239,25 @@ export function Message({ item, first, status, onReply, onOpenList, accent }: Me
           ))}
         </div>
       );
+      break;
+    case 'flow':
+      inner =
+        item.from === 'user' ? (
+          <FlowReply answers={item.answers} time={item.time} status={status} />
+        ) : (
+          <div className="wa-b">
+            <div className="wa-bt">
+              {item.header && <div className="wa-bh">{item.header}</div>}
+              <Text text={item.text} />
+              {item.footer && <div className="wa-bf">{item.footer}</div>}
+              <Meta time={item.time} out={false} />
+            </div>
+            <button type="button" className="wa-ia-btn" onClick={onOpenFlow} disabled={!onOpenFlow || flowDone}>
+              <Icon name="form" size={18} />
+              <span>{item.cta}</span>
+            </button>
+          </div>
+        );
       break;
   }
 

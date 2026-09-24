@@ -66,7 +66,7 @@ Entrada típica: un documento del cliente con el árbol de conversación, los en
    - `note`: información útil para el equipo.
    Cuando el documento es inconsistente (un endpoint exige un dato que el flujo nunca pide, unidades que no coinciden, un botón de más de 20 caracteres), **no lo arregles en silencio**: modelalo lo más fiel posible y marcá `pending` explicando la inconsistencia.
 7. **Datos de prueba:** en `config.demo.identities` va un valor por escenario (cliente normal, no cliente, casos especiales de cada endpoint).
-8. **Tests:** en `tests/<id>.test.ts`, al menos un recorrido por intención principal y uno por cada rama de error de los endpoints. Usar `createSession(bot)`: `send`, `pick`, `sendMedia`, `tick`, `template`, `options()`, `lastText()`, `vars`, `mode`, `transcript()`.
+8. **Tests:** en `tests/<id>.test.ts`, al menos un recorrido por intención principal y uno por cada rama de error de los endpoints. Usar `createSession(bot)`: `send`, `pick`, `sendMedia`, `submitFlow`, `tick`, `template`, `options()`, `lastText()`, `vars`, `mode`, `transcript()`.
 9. **`npm run check`** hasta tener 0 errores. Revisar los avisos del linter: cada uno es una decisión (se acepta o se corrige).
 10. **Revisar visualmente** con `npm run dev`: `/<id>/flujo` (que cada intención se lea bien), `/<id>/prueba` (probar los caminos, el registro tiene que contar la historia) y `/<id>` en ancho de celular.
 
@@ -81,6 +81,7 @@ Entrada típica: un documento del cliente con el árbol de conversación, los en
 | "Derivar a ATC / ventas / ejecutivo" | `say(mensajeDeEspera)` + `handoff('Cola', { topic, topicId })` |
 | "Ingresar cédula / email / celular" | `ask(texto, 'variable', { validate: V.xxx, error })` |
 | "Solo se pide una vez por sesión" | `ask(..., { skipIf: has('variable') })` o una `cond` al inicio |
+| Varios datos seguidos (nombre, teléfono, ciudad…) o "usar WhatsApp Flow" | `flow(texto, { cta, screens: [screen(id, título, [F.text(…), F.dropdown(…)], 'Enviar')] })`. Etiquetas de 20 caracteres: dejar el texto original en `note` |
 | "El cliente envía una foto" | `askImage(texto, 'variable')` |
 | "(Se le envían archivos / imagen / video / pdf)" | `media({ type, name, placeholder })` o `header` en un mensaje con botones |
 | Mensaje que se envía una vez (bienvenida, aviso) | `say(texto, { once: true })` |
