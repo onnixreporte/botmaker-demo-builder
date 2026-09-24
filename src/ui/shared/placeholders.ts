@@ -44,11 +44,6 @@ export const MAP_IMAGE = uri(
   '<svg xmlns="http://www.w3.org/2000/svg" width="500" height="260" viewBox="0 0 500 260"><rect width="500" height="260" fill="#E8EFE3"/><path d="M0 70H500M0 170H500M120 0V260M300 0V260M420 0V260" stroke="#fff" stroke-width="14"/><path d="M0 120 C120 100 220 160 500 110" stroke="#FCE7A4" stroke-width="16" fill="none"/><path d="M250 150c-18 0-32-14-32-32 0-24 32-58 32-58s32 34 32 58c0 18-14 32-32 32z" fill="#E5484D"/><circle cx="250" cy="116" r="10" fill="#fff"/></svg>',
 );
 
-/** Fondo del chat: dibujos propios de trazo fino, no el fondo original de WhatsApp. */
-export const WALLPAPER = uri(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180" fill="none" stroke="#B8AC98" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".32"><path d="M20 44 34 32l14 12v16H20z M30 60v-9h8v9"/><path d="M120 22v18 M112 30a8 8 0 1 1 16 0 8 8 0 1 1-16 0"/><path d="M80 110c0-8 6-14 14-14s14 6 14 14c0 10-14 24-14 24s-14-14-14-24z"/><circle cx="94" cy="110" r="4"/><path d="M150 120h16v16h-16z M150 128h16 M158 120v16"/><path d="M30 140l10-10 10 10 M34 150h12"/><circle cx="60" cy="90" r="2"/><circle cx="150" cy="70" r="2"/><circle cx="110" cy="160" r="2"/></svg>',
-);
-
 export const DEFAULT_GALLERY: { label: string; kind: SampleKind }[] = [
   { label: 'Foto', kind: 'photo' },
   { label: 'Documento', kind: 'id-front' },

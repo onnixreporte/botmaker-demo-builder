@@ -287,8 +287,12 @@ export interface BotConfig {
   name: string;
   client: string;
   description: string;
-  /** Perfil de empresa que ve el cliente en el encabezado del chat. */
-  profile: { name: string; initials: string; color: string; about?: string };
+  /**
+   * Perfil de empresa que ve el cliente en el encabezado del chat.
+   * `avatar` (foto de perfil, cuadrada) y `logo` (logo completo, para la presentación)
+   * son rutas dentro de `public/`, ej. `/bots/<id>/avatar.png`. Sin `avatar` se muestran las iniciales.
+   */
+  profile: { name: string; initials: string; color: string; about?: string; avatar?: string; logo?: string };
   /** Intención con la que arranca toda sesión. */
   entry: string;
   /** Intención de cierre (encuesta, despedida y `close()`). */

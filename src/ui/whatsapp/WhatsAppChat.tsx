@@ -2,7 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 're
 import type { ChatItem, ReceiptStatus, UserInput } from '../../core/engine';
 import type { BotConfig, Row } from '../../core/types';
 import { Icon } from '../shared/icons';
-import { DEFAULT_GALLERY, WALLPAPER, sampleImage, type SampleKind } from '../shared/placeholders';
+import { Avatar } from '../shared/Avatar';
+import { DEFAULT_GALLERY, sampleImage, type SampleKind } from '../shared/placeholders';
+import wallpaper from './wallpaper.jpg';
 import { Message } from './Message';
 import './whatsapp.css';
 
@@ -126,7 +128,7 @@ export function WhatsAppChat({ profile, items, receipts, typing, online, notice,
 
   return (
     <div className="wa-phone">
-      <div className="wa-screen">
+      <div className="wa-screen" style={{ backgroundImage: `url("${wallpaper}")` }}>
         <div className="wa-sbar" aria-hidden="true">
           <span>{clock ?? ''}</span>
           <span className="cam" />
@@ -149,9 +151,7 @@ export function WhatsAppChat({ profile, items, receipts, typing, online, notice,
           <button type="button" className="wa-ib" aria-label="Volver" onClick={() => setToast('Este chat es una demo')}>
             <Icon name="back" />
           </button>
-          <div className="wa-avatar" style={{ background: profile.color }} aria-hidden="true">
-            {profile.initials}
-          </div>
+          <Avatar profile={profile} className="wa-avatar" />
           <div className="wa-who">
             <b>{profile.name}</b>
             <span className={typing ? 'typing' : ''}>{typing ? 'escribiendo…' : online ? 'en línea' : profile.about ?? 'Cuenta de empresa'}</span>
@@ -167,7 +167,7 @@ export function WhatsAppChat({ profile, items, receipts, typing, online, notice,
           </button>
         </header>
 
-        <div className="wa-chat" ref={chatRef} onScroll={onScroll} style={{ backgroundImage: `url("${WALLPAPER}")` }} aria-live="polite">
+        <div className="wa-chat" ref={chatRef} onScroll={onScroll} aria-live="polite">
           <div className="wa-chip">Hoy</div>
           {notice && <div className="wa-chip note">{notice}</div>}
           {items.map((it, i) => {

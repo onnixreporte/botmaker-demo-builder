@@ -1,5 +1,6 @@
 import { bots } from '../bots';
 import { lintBot } from '../core/lint';
+import { Avatar } from '../ui/shared/Avatar';
 import { href, onLink } from '../ui/shared/router';
 import './home.css';
 
@@ -21,9 +22,7 @@ export function HomePage() {
           return (
             <li key={c.id} className="home-card">
               <div className="home-id">
-                <span className="av" style={{ background: c.profile.color }}>
-                  {c.profile.initials}
-                </span>
+                <Avatar profile={c.profile} className="av" />
                 <div>
                   <b>{c.name}</b>
                   <span>{c.client}</span>

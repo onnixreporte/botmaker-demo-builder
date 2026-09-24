@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { BotDef } from '../core/types';
+import { Avatar, asset } from '../ui/shared/Avatar';
 import { WhatsAppChat } from '../ui/whatsapp/WhatsAppChat';
 import { useClock, useEngine } from '../ui/simulator/useEngine';
 import './pages.css';
@@ -46,7 +47,7 @@ export function DemoPage({ bot }: { bot: BotDef }) {
   return (
     <div className="page-demo">
       <div className="mbar">
-        <b>{cfg.client} · demo</b>
+        <b>{cfg.client}</b>
         <button type="button" className="btn" onClick={() => setInfo(true)}>
           Cómo probar
         </button>
@@ -56,12 +57,17 @@ export function DemoPage({ bot }: { bot: BotDef }) {
       </div>
 
       <section className="intro">
-        <div className="intro-brand">
-          <span className="av" style={{ background: cfg.profile.color }}>
-            {cfg.profile.initials}
-          </span>
-          <span className="eyebrow">Demo · {cfg.client}</span>
-        </div>
+        {cfg.profile.logo ? (
+          <div className="intro-brand logo">
+            <img src={asset(cfg.profile.logo)} alt={cfg.client} />
+            <span className="eyebrow">Demo</span>
+          </div>
+        ) : (
+          <div className="intro-brand">
+            <Avatar profile={cfg.profile} className="av" />
+            <span className="eyebrow">Demo · {cfg.client}</span>
+          </div>
+        )}
         <h1>Probá el asistente de WhatsApp</h1>
         <p>{cfg.description}</p>
         <Tips />

@@ -141,7 +141,12 @@ export function Message({ item, first, status, onReply, onOpenList, accent }: Me
         <div className="wa-b">
           <div className="wa-bt">
             <Text text={item.text} />
-            {item.from === 'user' && item.subtext && <span className="wa-sub-reply">{item.subtext}</span>}
+            {item.from === 'user' && item.subtext && (
+              <>
+                {'\n'}
+                <span className="wa-sub-reply">{item.subtext}</span>
+              </>
+            )}
             <Meta time={item.time} out={out} status={status} />
           </div>
         </div>
@@ -188,14 +193,12 @@ export function Message({ item, first, status, onReply, onOpenList, accent }: Me
       break;
     case 'buttons':
       inner = (
-        <>
-          <div className="wa-b">
-            {item.header && <MediaBlock media={item.header} accent={accent} />}
-            <div className="wa-bt">
-              <Text text={item.text} />
-              {item.footer && <div className="wa-bf">{item.footer}</div>}
-              <Meta time={item.time} out={false} />
-            </div>
+        <div className="wa-b">
+          {item.header && <MediaBlock media={item.header} accent={accent} />}
+          <div className="wa-bt">
+            <Text text={item.text} />
+            {item.footer && <div className="wa-bf">{item.footer}</div>}
+            <Meta time={item.time} out={false} />
           </div>
           {item.buttons.map((b) => (
             <button type="button" key={b.id} className="wa-rb" onClick={() => onReply?.(b)} disabled={!onReply}>
@@ -203,7 +206,7 @@ export function Message({ item, first, status, onReply, onOpenList, accent }: Me
               <span>{b.title}</span>
             </button>
           ))}
-        </>
+        </div>
       );
       break;
   }

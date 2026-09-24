@@ -3,7 +3,8 @@
    Todo lleva prefijo wa- para no chocar con el resto de la app.
    ========================================================================== */
 :root {
-  --wa-bg: #efeae2;
+  /* color base de wallpaper.jpg (se ve mientras carga la imagen) */
+  --wa-bg: #f9f9f9;
   --wa-bar: #ffffff;
   --wa-ink: #111b21;
   --wa-sub: #667781;
@@ -47,7 +48,11 @@
   height: 100%;
   border-radius: 44px;
   overflow: hidden;
-  background: var(--wa-bg);
+  /* wallpaper.jpg (vertical) va en toda la pantalla: el chat y el compositor flotan encima. */
+  background-color: var(--wa-bg);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   display: flex;
   flex-direction: column;
   font-family: var(--wa-font);
@@ -194,8 +199,6 @@
   min-height: 0;
   overflow-y: auto;
   padding: 8px 14px;
-  background-color: var(--wa-bg);
-  background-size: 180px 180px;
   overscroll-behavior: contain;
 }
 .wa-chip {
@@ -320,11 +323,10 @@
 .wa-tk.read {
   color: var(--wa-read);
 }
+/* En línea (tras un salto) para que la hora quepa al lado, como en WhatsApp. */
 .wa-sub-reply {
   font-size: 13px;
   color: var(--wa-sub);
-  display: block;
-  margin-top: 1px;
 }
 .wa-ia-btn {
   display: flex;
@@ -341,19 +343,23 @@
   cursor: pointer;
   border-radius: 0 0 8px 8px;
 }
+/* Botones de respuesta: dentro del mismo globo, separados por una línea. */
 .wa-rb {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
+  width: 100%;
   border: 0;
-  background: var(--wa-in);
-  border-radius: 8px;
-  padding: 10px 8px;
+  border-top: 1px solid #e9edef;
+  background: transparent;
+  padding: 10px 8px 11px;
   color: var(--wa-teal);
   font: 500 14.5px var(--wa-font);
   cursor: pointer;
-  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+}
+.wa-rb:last-child {
+  border-radius: 0 0 8px 8px;
 }
 .wa-ia-btn:hover,
 .wa-rb:hover {
