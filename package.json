@@ -1,0 +1,33 @@
+{
+  "name": "botmaker-demo-builder",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Builder de demos de bots de WhatsApp: flujograma estilo Botmaker + demo con interfaz de WhatsApp a partir de una sola definición.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint:flows": "tsx scripts/lint-flows.ts",
+    "check": "npm run typecheck && npm run lint:flows && npm run test",
+    "new-bot": "node scripts/new-bot.mjs"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.3",
+    "vitest": "^3.2.7"
+  }
+}
